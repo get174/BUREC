@@ -12,6 +12,7 @@ import { UsersPage } from './pages/UsersPage';
 import { ReportsPage } from './pages/ReportsPage';
 import { ActivityPage } from './pages/ActivityPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { PointFocauxPage } from './pages/PointFocauxPage';
 import { hasPermission } from './lib/permissions';
 import { Loader2 } from 'lucide-react';
 
@@ -60,6 +61,7 @@ function AppContent() {
         dashboard: 'dashboard.view',
         structures: 'structures.view',
         mandataires: 'mandataires.view',
+        pointfocaux: 'pointfocaux.view',
         cotisations: 'cotisations.view',
         users: 'users.view',
         reports: 'reports.view',
@@ -80,6 +82,7 @@ function AppContent() {
     dashboard: 'Rechercher...',
     structures: 'Rechercher une structure...',
     mandataires: 'Rechercher un mandataire...',
+    pointfocaux: 'Rechercher un point focal...',
     cotisations: 'Rechercher une cotisation...',
     users: 'Rechercher un utilisateur...',
     activity: 'Rechercher une activité...',
@@ -95,6 +98,8 @@ function AppContent() {
         return <StructuresPage searchQuery={searchQuery} onNavigate={navigate} />;
       case 'mandataires':
         return <MandatairesPage searchQuery={searchQuery} filterStructureId={pageParams.structureId} />;
+      case 'pointfocaux':
+        return <PointFocauxPage searchQuery={searchQuery} />;
       case 'cotisations':
         return <CotisationsPage searchQuery={searchQuery} />;
       case 'users':

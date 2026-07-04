@@ -11,6 +11,7 @@ import {
   LogOut,
   ChevronLeft,
   X,
+  Contact,
 } from 'lucide-react';
 import { useAuth, useRole } from '../../context/AuthContext';
 import { hasPermission, ROLE_SHORT, type Permission } from '../../lib/permissions';
@@ -27,6 +28,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Tableau de bord',    icon: LayoutDashboard, page: 'dashboard',  permission: 'dashboard.view'  },
   { label: 'Structures',         icon: Building2,       page: 'structures', permission: 'structures.view' },
   { label: 'Mandataires',        icon: Users,           page: 'mandataires',permission: 'mandataires.view'},
+  { label: 'Points Focaux',      icon: Contact,         page: 'pointfocaux',permission: 'pointfocaux.view'},
   { label: 'Cotisations',        icon: DollarSign,      page: 'cotisations',permission: 'cotisations.view'},
   { label: 'Utilisateurs',       icon: UserCog,         page: 'users',      permission: 'users.view'      },
   { label: 'Rapports',           icon: BarChart3,       page: 'reports',    permission: 'reports.view'    },

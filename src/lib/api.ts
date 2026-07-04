@@ -7,6 +7,7 @@ import type {
   Mandataire,
   Notification,
   Profile,
+  PointFocal,
   Structure,
 } from '../types';
 
@@ -255,5 +256,61 @@ export async function uploadDocument(
 
 export async function deleteDocument(id: string): Promise<void> {
   const { error } = await supabase.from('documents').delete().eq('id', id);
+  if (error) throw error;
+}
+
+export async function uploadMandatairePhoto(
+  mandataireId: string,
+  file: File
+): Promise<string> {
+  const ext = file.name.split('.').pop() ?? 'jpg';
+  const fileName = `${mandataireId}/photo-${Date.now()}.${ext}`;
+  const { error: uploadError } = await supabase.storage
+    .from('photos-mandataires')
+    .upload(fileName, file, { cacheControl: '3600', upsert: true });
+  if (uploadError) throw uploadError;
+  const { data: urlData } = supabase.storage
+    .from('photos-mandataires')
+    .getPublicUrl(fileName);
+  return urlData.publicUrl;
+}
+
+export async function fetchPointFocaux(): Promise<PointFocal[]> {
+  const { data, error } = await supabase
+    .from('point_focaux')
+    .select('*')
+    .order('numero', { ascending: true });
+  if (error) throw error;
+  return (data as PointFocal[]) ?? [];
+}
+
+export async function createPointFocal(
+  input: Omit<PointFocal, 'id' | 'created_at' | 'updated_at'>
+): Promise<PointFocal> {
+  const { data, error } = await supabase
+    .from('point_focaux')
+    .insert(input)
+    .select()
+    .single();
+  if (error) throw error;
+  return data as PointFocal;
+}
+
+export async function updatePointFocal(
+  id: string,
+  input: Partial<PointFocal>
+): Promise<PointFocal> {
+  const { data, error } = await supabase
+    .from('point_focaux')
+    .update(input)
+    .eq('id', id)
+    .select()
+    .single();
+  if (error) throw error;
+  return data as PointFocal;
+}
+
+export async function deletePointFocal(id: string): Promise<void> {
+  const { error } = await supabase.from('point_focaux').delete().eq('id', id);
   if (error) throw error;
 }

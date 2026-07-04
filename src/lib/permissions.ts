@@ -35,7 +35,11 @@ export type Permission =
   | 'reports.view'
   | 'reports.export'
   | 'activity.view'
-  | 'settings.manage';
+  | 'settings.manage'
+  | 'pointfocaux.view'
+  | 'pointfocaux.create'
+  | 'pointfocaux.edit'
+  | 'pointfocaux.delete';
 
 const ALL_PERMISSIONS: Permission[] = [
   'dashboard.view',
@@ -59,6 +63,10 @@ const ALL_PERMISSIONS: Permission[] = [
   'reports.export',
   'activity.view',
   'settings.manage',
+  'pointfocaux.view',
+  'pointfocaux.create',
+  'pointfocaux.edit',
+  'pointfocaux.delete',
 ];
 
 export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
@@ -73,6 +81,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     'cotisations.view',
     'cotisations.create',
     'reports.view',
+    'pointfocaux.view',
   ],
   accountant: [
     'dashboard.view',
@@ -83,6 +92,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     'cotisations.delete',
     'reports.view',
     'reports.export',
+    'pointfocaux.view',
   ],
 };
 

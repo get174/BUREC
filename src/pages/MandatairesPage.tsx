@@ -1,4 +1,5 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Users,
   Plus,
@@ -20,6 +21,9 @@ import {
   X,
   User,
   Clock,
+  Camera,
+  CreditCard,
+  Printer,
 } from 'lucide-react';
 import { useAuth, useRole } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
@@ -29,6 +33,7 @@ import { Badge } from '../components/ui/Badge';
 import { Modal, ConfirmModal } from '../components/ui/Modal';
 import { FormField, Select, Textarea } from '../components/ui/FormField';
 import { EmptyState } from '../components/ui/EmptyState';
+import { MemberCard, CarteTypeSelector } from '../components/ui/ServiceCard';
 import {
   fetchMandataires,
   fetchMandataire,
@@ -38,12 +43,14 @@ import {
   deleteMandataire,
   uploadDocument,
   deleteDocument,
+  uploadMandatairePhoto,
   logActivity,
 } from '../lib/api';
 import { hasPermission, isAdmin } from '../lib/permissions';
 import {
   SEXE_LABELS,
   MANDATAIRE_STATUT_LABELS,
+  CARTE_TYPE_LABELS,
   PROVINCES,
   formatDate,
   formatCurrency,
@@ -55,6 +62,7 @@ import type {
   Structure,
   MandataireSexe,
   MandataireStatut,
+  CarteType,
   DocumentType,
   Document,
 } from '../types';
@@ -96,6 +104,11 @@ export function MandatairesPage({ searchQuery, filterStructureId }: MandatairesP
   const [docFile, setDocFile] = useState<File | null>(null);
   const [uploadingDoc, setUploadingDoc] = useState(false);
 
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [printTarget, setPrintTarget] = useState<Mandataire | null>(null);
+
   const canCreate = hasPermission(role, 'mandataires.create');
   const canEdit = hasPermission(role, 'mandataires.edit');
   const canDelete = hasPermission(role, 'mandataires.delete');
@@ -121,11 +134,22 @@ export function MandatairesPage({ searchQuery, filterStructureId }: MandatairesP
     statut: 'actif' as MandataireStatut,
     ambitions: '',
     observations: '',
+    carte_type: null as CarteType | null,
+    photo_url: null as string | null,
   });
 
   useEffect(() => {
     load();
   }, []);
+
+  useEffect(() => {
+    if (!printTarget) return;
+    const id = window.setTimeout(() => {
+      window.print();
+      setPrintTarget(null);
+    }, 100);
+    return () => window.clearTimeout(id);
+  }, [printTarget]);
 
   async function load() {
     setLoading(true);
@@ -187,7 +211,11 @@ export function MandatairesPage({ searchQuery, filterStructureId }: MandatairesP
       statut: 'actif',
       ambitions: '',
       observations: '',
+      carte_type: null,
+      photo_url: null,
     });
+    setPhotoFile(null);
+    setPhotoPreview(null);
     setModalOpen(true);
   }
 
@@ -214,7 +242,11 @@ export function MandatairesPage({ searchQuery, filterStructureId }: MandatairesP
       statut: m.statut,
       ambitions: m.ambitions ?? '',
       observations: m.observations ?? '',
+      carte_type: m.carte_type,
+      photo_url: m.photo_url,
     });
+    setPhotoFile(null);
+    setPhotoPreview(m.photo_url);
     setModalOpen(true);
   }
 
@@ -226,8 +258,20 @@ export function MandatairesPage({ searchQuery, filterStructureId }: MandatairesP
     }
     setSaving(true);
     try {
+      let photoUrl = form.photo_url;
+      if (photoFile) {
+        setUploadingPhoto(true);
+        try {
+          const tempId = editing?.id ?? crypto.randomUUID();
+          photoUrl = await uploadMandatairePhoto(tempId, photoFile);
+        } finally {
+          setUploadingPhoto(false);
+        }
+      }
+
       const payload = {
         ...form,
+        photo_url: photoUrl,
         date_naissance: form.date_naissance || null,
         date_nomination: form.date_nomination || null,
         structure_id: form.structure_id || null,
@@ -239,6 +283,9 @@ export function MandatairesPage({ searchQuery, filterStructureId }: MandatairesP
         toast('Mandataire mis à jour', 'success');
       } else {
         const created = await createMandataire(payload);
+        if (photoFile && photoUrl) {
+          await updateMandataire(created.id, { photo_url: photoUrl });
+        }
         await logActivity('CREATE_MANDATAIRE', 'mandataire', { id: created.id, matricule: form.matricule });
         toast('Mandataire créé avec succès', 'success');
       }
@@ -251,6 +298,20 @@ export function MandatairesPage({ searchQuery, filterStructureId }: MandatairesP
     } finally {
       setSaving(false);
     }
+  }
+
+  function handlePhotoSelect(file: File | null) {
+    if (!file) {
+      setPhotoFile(null);
+      setPhotoPreview(editing?.photo_url ?? null);
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast('La photo ne doit pas dépasser 5 MB', 'error');
+      return;
+    }
+    setPhotoFile(file);
+    setPhotoPreview(URL.createObjectURL(file));
   }
 
   async function handleDelete() {
@@ -320,9 +381,17 @@ export function MandatairesPage({ searchQuery, filterStructureId }: MandatairesP
       header: 'Nom complet',
       render: (m) => (
         <div className="flex items-center gap-3">
-          <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0 ${m.sexe === 'F' ? 'bg-accent-50 text-accent-700' : 'bg-primary-50 text-primary-900'}`}>
-            {getInitials(`${m.prenom} ${m.nom}`)}
-          </div>
+          {m.photo_url ? (
+            <img
+              src={m.photo_url}
+              alt={`${m.prenom} ${m.nom}`}
+              className="w-9 h-9 rounded-full object-cover flex-shrink-0 border border-neutral-200"
+            />
+          ) : (
+            <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0 ${m.sexe === 'F' ? 'bg-accent-50 text-accent-700' : 'bg-primary-50 text-primary-900'}`}>
+              {getInitials(`${m.prenom} ${m.nom}`)}
+            </div>
+          )}
           <div className="min-w-0">
             <p className="font-medium text-neutral-900 truncate">
               {m.prenom} {m.nom} {m.postnom}
@@ -348,6 +417,27 @@ export function MandatairesPage({ searchQuery, filterStructureId }: MandatairesP
       key: 'statut',
       header: 'Statut',
       render: (m) => <Badge variant={STATUT_VARIANT[m.statut]} dot>{MANDATAIRE_STATUT_LABELS[m.statut]}</Badge>,
+    },
+    {
+      key: 'carte_type',
+      header: 'Membre',
+      render: (m) =>
+        m.carte_type ? (
+          <span
+            className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-semibold ${
+              m.carte_type === 'premium'
+                ? 'bg-neutral-900 text-accent-400'
+                : m.carte_type === 'gold'
+                ? 'bg-accent-100 text-accent-800'
+                : 'bg-neutral-200 text-neutral-700'
+            }`}
+          >
+            <CreditCard className="w-3 h-3" />
+            {CARTE_TYPE_LABELS[m.carte_type]}
+          </span>
+        ) : (
+          <span className="text-neutral-400 text-xs">—</span>
+        ),
     },
     {
       key: 'actions',
@@ -697,6 +787,68 @@ export function MandatairesPage({ searchQuery, filterStructureId }: MandatairesP
               </FormField>
             </div>
           </div>
+
+          <div>
+            <h4 className="text-sm font-semibold text-neutral-800 mb-3 flex items-center gap-2">
+              <Camera className="w-4 h-4 text-primary-900" />
+              Photo du mandataire
+            </h4>
+            <div className="flex items-center gap-4">
+              <div className="flex-shrink-0">
+                {photoPreview ? (
+                  <div className="relative">
+                    <img
+                      src={photoPreview}
+                      alt="Aperçu"
+                      className="w-24 h-24 rounded-xl object-cover border-2 border-neutral-200"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handlePhotoSelect(null)}
+                      className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-error-500 text-white flex items-center justify-center shadow-sm hover:bg-error-600 transition-colors"
+                      title="Retirer la photo"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="w-24 h-24 rounded-xl bg-neutral-100 border-2 border-dashed border-neutral-300 flex items-center justify-center">
+                    <User className="w-8 h-8 text-neutral-400" />
+                  </div>
+                )}
+              </div>
+              <div className="flex-1">
+                <label className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-neutral-300 text-sm font-medium text-neutral-700 hover:bg-neutral-50 cursor-pointer transition-colors">
+                  <Camera className="w-4 h-4" />
+                  {photoPreview ? 'Changer la photo' : 'Prendre/Téléverser une photo'}
+                  <input
+                    type="file"
+                    className="hidden"
+                    accept="image/*"
+                    capture="user"
+                    onChange={(e) => handlePhotoSelect(e.target.files?.[0] ?? null)}
+                  />
+                </label>
+                <p className="text-xs text-neutral-400 mt-1.5">
+                  JPG, PNG (max 5 MB). La photo apparaîtra sur la carte de service.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <h4 className="text-sm font-semibold text-neutral-800 mb-1 flex items-center gap-2">
+              <CreditCard className="w-4 h-4 text-primary-900" />
+              Carte de membre
+            </h4>
+            <p className="text-xs text-neutral-500 mb-3">
+              Sélectionnez le type de carte selon l'apport du mandataire.
+            </p>
+            <CarteTypeSelector
+              value={form.carte_type}
+              onChange={(v) => setForm({ ...form, carte_type: v })}
+            />
+          </div>
         </form>
       </Modal>
 
@@ -728,9 +880,17 @@ export function MandatairesPage({ searchQuery, filterStructureId }: MandatairesP
         {detailTarget && (
           <div className="space-y-6">
             <div className="flex items-start gap-4 pb-6 border-b border-neutral-100">
-              <div className={`w-16 h-16 rounded-2xl flex items-center justify-center text-lg font-bold flex-shrink-0 ${detailTarget.sexe === 'F' ? 'bg-accent-50 text-accent-700' : 'bg-primary-50 text-primary-900'}`}>
-                {getInitials(`${detailTarget.prenom} ${detailTarget.nom}`)}
-              </div>
+              {detailTarget.photo_url ? (
+                <img
+                  src={detailTarget.photo_url}
+                  alt={`${detailTarget.prenom} ${detailTarget.nom}`}
+                  className="w-16 h-16 rounded-2xl object-cover flex-shrink-0 border border-neutral-200"
+                />
+              ) : (
+                <div className={`w-16 h-16 rounded-2xl flex items-center justify-center text-lg font-bold flex-shrink-0 ${detailTarget.sexe === 'F' ? 'bg-accent-50 text-accent-700' : 'bg-primary-50 text-primary-900'}`}>
+                  {getInitials(`${detailTarget.prenom} ${detailTarget.nom}`)}
+                </div>
+              )}
               <div className="flex-1 min-w-0">
                 <h3 className="text-lg font-bold text-neutral-900">
                   {detailTarget.prenom} {detailTarget.nom} {detailTarget.postnom}
@@ -741,6 +901,11 @@ export function MandatairesPage({ searchQuery, filterStructureId }: MandatairesP
                   <Badge variant={STATUT_VARIANT[detailTarget.statut]} dot>
                     {MANDATAIRE_STATUT_LABELS[detailTarget.statut]}
                   </Badge>
+                  {detailTarget.carte_type && (
+                    <Badge variant="primary" dot>
+                      Membre {CARTE_TYPE_LABELS[detailTarget.carte_type]}
+                    </Badge>
+                  )}
                 </div>
               </div>
             </div>
@@ -788,6 +953,43 @@ export function MandatairesPage({ searchQuery, filterStructureId }: MandatairesP
                     <p className="text-sm text-neutral-700">{detailTarget.observations}</p>
                   </div>
                 )}
+              </div>
+            )}
+
+            {detailTarget.carte_type && (
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="text-sm font-semibold text-neutral-800 flex items-center gap-2">
+                    <CreditCard className="w-4 h-4 text-primary-900" />
+                    Carte de membre — {CARTE_TYPE_LABELS[detailTarget.carte_type]}
+                  </h4>
+                  <button
+                    onClick={() => setPrintTarget(detailTarget)}
+                    className="btn-secondary text-sm py-2"
+                    title="Imprimer la carte (recto-verso)"
+                  >
+                    <Printer className="w-4 h-4" />
+                    Imprimer recto-verso
+                  </button>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-[10px] font-bold tracking-wider text-neutral-400 mb-1.5 text-center">RECTO</p>
+                    <MemberCard
+                      mandataire={detailTarget}
+                      structureName={getStructureName(detailTarget.structure_id)}
+                      side="recto"
+                    />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold tracking-wider text-neutral-400 mb-1.5 text-center">VERSO</p>
+                    <MemberCard
+                      mandataire={detailTarget}
+                      structureName={getStructureName(detailTarget.structure_id)}
+                      side="verso"
+                    />
+                  </div>
+                </div>
               </div>
             )}
 
@@ -931,6 +1133,33 @@ export function MandatairesPage({ searchQuery, filterStructureId }: MandatairesP
         confirmLabel="Supprimer"
         danger
       />
+
+      {printTarget &&
+        createPortal(
+          <div className="print-sheet" aria-hidden>
+            <div className="print-card-page">
+              <div className="print-card-wrapper">
+                <MemberCard
+                  mandataire={printTarget}
+                  structureName={getStructureName(printTarget.structure_id)}
+                  side="recto"
+                  printable
+                />
+              </div>
+            </div>
+            <div className="print-card-page">
+              <div className="print-card-wrapper">
+                <MemberCard
+                  mandataire={printTarget}
+                  structureName={getStructureName(printTarget.structure_id)}
+                  side="verso"
+                  printable
+                />
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
     </div>
   );
 }

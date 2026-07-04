@@ -15,6 +15,8 @@ export type MandataireSexe = 'M' | 'F';
 
 export type MandataireStatut = 'actif' | 'inactif' | 'suspendu' | 'retraite';
 
+export type CarteType = 'premium' | 'gold' | 'sylver';
+
 export type DocumentType = 'cv' | 'diplome' | 'arrete' | 'autre';
 
 export type CotisationType = 'mensuelle' | 'don' | 'exceptionnelle';
@@ -71,6 +73,8 @@ export interface Mandataire {
   statut: MandataireStatut;
   ambitions: string | null;
   observations: string | null;
+  carte_type: CarteType | null;
+  photo_url: string | null;
   created_by: string | null;
   created_at: string;
   updated_at: string;
@@ -139,4 +143,14 @@ export interface DashboardStats {
   cotisationsParType: { type: string; montant: number }[];
   mandatairesParProvince: { province: string; count: number }[];
   retardataires: number;
+}
+
+export interface PointFocal {
+  id: string;
+  numero: number;
+  structure: string;
+  nom_point_focal: string;
+  contact: string | null;
+  created_at: string;
+  updated_at: string;
 }

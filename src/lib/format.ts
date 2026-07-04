@@ -1,4 +1,5 @@
 import type {
+  CarteType,
   CotisationType,
   DocumentType,
   MandataireSexe,
@@ -75,6 +76,18 @@ export const MANDATAIRE_STATUT_LABELS: Record<MandataireStatut, string> = {
   inactif: 'Inactif',
   suspendu: 'Suspendu',
   retraite: 'Retraité',
+};
+
+export const CARTE_TYPE_LABELS: Record<CarteType, string> = {
+  premium: 'Premium',
+  gold: 'Gold',
+  sylver: 'Sylver',
+};
+
+export const CARTE_TYPE_DESCRIPTIONS: Record<CarteType, string> = {
+  premium: 'Apport exceptionnel — carte de service haut de gamme',
+  gold: 'Apport important — carte de service dorée',
+  sylver: 'Apport régulier — carte de service argent',
 };
 
 export const DOCUMENT_TYPE_LABELS: Record<DocumentType, string> = {
