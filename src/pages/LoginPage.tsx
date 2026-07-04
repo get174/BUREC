@@ -38,17 +38,7 @@ export function LoginPage() {
         <div className="relative flex flex-col justify-between p-12 text-white">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center flex-shrink-0 shadow-md overflow-hidden">
-              <svg viewBox="0 0 40 40" className="w-12 h-12">
-                <circle cx="20" cy="20" r="20" fill="#2DBE39"/>
-                <path d="M4 28 Q20 10 36 28" stroke="#F5D000" strokeWidth="3" fill="none"/>
-                <ellipse cx="20" cy="24" rx="7" ry="6" fill="white"/>
-                <ellipse cx="20" cy="16" rx="4" ry="4" fill="white"/>
-                <polygon points="18,13 20,10 22,13" fill="white"/>
-                <path d="M18 13 Q19 11 20 12 Q20 10 21 11 Q21 9 22 11 Q23 12 22 13" fill="#DC2626"/>
-                <polygon points="23,16 26,17 23,18" fill="#F5D000"/>
-                <path d="M13 20 Q8 16 10 12 Q12 18 13 22" fill="white"/>
-                <path d="M12 22 Q6 20 8 15 Q11 21 12 24" fill="#e0e0e0"/>
-              </svg>
+              <img src="/assets/burec-logo.svg" alt="BUREC" className="w-12 h-12 object-cover" />
             </div>
             <div>
               <p className="text-lg font-bold font-display">SGMEP</p>
@@ -88,17 +78,7 @@ export function LoginPage() {
         <div className="w-full max-w-sm">
           <div className="lg:hidden flex items-center gap-3 mb-8">
             <div className="w-11 h-11 rounded-xl bg-white flex items-center justify-center shadow-md overflow-hidden">
-              <svg viewBox="0 0 40 40" className="w-11 h-11">
-                <circle cx="20" cy="20" r="20" fill="#2DBE39"/>
-                <path d="M4 28 Q20 10 36 28" stroke="#F5D000" strokeWidth="3" fill="none"/>
-                <ellipse cx="20" cy="24" rx="7" ry="6" fill="white"/>
-                <ellipse cx="20" cy="16" rx="4" ry="4" fill="white"/>
-                <polygon points="18,13 20,10 22,13" fill="white"/>
-                <path d="M18 13 Q19 11 20 12 Q20 10 21 11 Q21 9 22 11 Q23 12 22 13" fill="#DC2626"/>
-                <polygon points="23,16 26,17 23,18" fill="#F5D000"/>
-                <path d="M13 20 Q8 16 10 12 Q12 18 13 22" fill="white"/>
-                <path d="M12 22 Q6 20 8 15 Q11 21 12 24" fill="#e0e0e0"/>
-              </svg>
+              <img src="/assets/burec-logo.svg" alt="BUREC" className="w-11 h-11 object-cover" />
             </div>
             <div>
               <p className="text-lg font-bold text-neutral-900 font-display">SGMEP</p>
