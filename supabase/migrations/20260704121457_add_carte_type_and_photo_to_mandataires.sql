@@ -1,4 +1,4 @@
-/*
+y/*
 # Add service card type and photo to mandataires
 
 ## Description

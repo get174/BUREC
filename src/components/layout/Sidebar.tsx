@@ -87,24 +87,8 @@ export function Sidebar({
         <div className={`flex items-center h-16 border-b border-white/10 flex-shrink-0 ${collapsed ? 'justify-center px-0' : 'px-4 gap-3'}`}>
           {/* Party emblem */}
           <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center flex-shrink-0 shadow-md overflow-hidden">
-            {/* Rooster icon inspired by logo – simple SVG */}
-            <svg viewBox="0 0 40 40" className="w-10 h-10">
-              {/* Green circle background */}
-              <circle cx="20" cy="20" r="20" fill="#2DBE39"/>
-              {/* Yellow arc */}
-              <path d="M4 28 Q20 10 36 28" stroke="#F5D000" strokeWidth="3" fill="none"/>
-              {/* White rooster silhouette (simplified) */}
-              <ellipse cx="20" cy="24" rx="7" ry="6" fill="white"/>
-              <ellipse cx="20" cy="16" rx="4" ry="4" fill="white"/>
-              <polygon points="18,13 20,10 22,13" fill="white"/>
-              {/* Red comb */}
-              <path d="M18 13 Q19 11 20 12 Q20 10 21 11 Q21 9 22 11 Q23 12 22 13" fill="#DC2626"/>
-              {/* Beak */}
-              <polygon points="23,16 26,17 23,18" fill="#F5D000"/>
-              {/* Tail feathers */}
-              <path d="M13 20 Q8 16 10 12 Q12 18 13 22" fill="white"/>
-              <path d="M12 22 Q6 20 8 15 Q11 21 12 24" fill="#e0e0e0"/>
-            </svg>
+            {/* Remplacer le SVG par le logo fourni (placer le fichier dans /assets/burec-logo.png) */}
+            <img src="/assets/burec-logo.svg" alt="BUREC" className="w-10 h-10 object-cover" />
           </div>
           {!collapsed && (
             <div className="min-w-0">

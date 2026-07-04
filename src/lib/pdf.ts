@@ -43,12 +43,12 @@ export function generateReceiptPDF(cotisation: Cotisation, mandataire: Mandatair
 </head>
 <body>
   <div class="receipt">
-    <div class="header">
+      <div class="header">
       <div>
         <h1>SGMEP</h1>
         <p>Système de Gestion des Mandataires et Élus du Parti</p>
       </div>
-      <div class="logo">S</div>
+      <div class="logo"><img src="/assets/burec-logo.svg" alt="BUREC" style="width:40px;height:40px;object-fit:cover;border-radius:10px;"/></div>
     </div>
     <div class="body">
       <div class="receipt-info">
