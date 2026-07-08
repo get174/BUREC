@@ -124,6 +124,22 @@ export function UsersPage({ searchQuery }: UsersPageProps) {
       toast('Le nom complet est obligatoire', 'error');
       return;
     }
+    // validate email/password for new users
+    if (!editing) {
+      const email = (form.email || '').trim();
+      const password = form.password || '';
+      if (!email) {
+        toast('L\'adresse email est obligatoire', 'error');
+        setSaving(false);
+        return;
+      }
+      const pwError = validatePassword(password);
+      if (pwError) {
+        toast(pwError, 'error');
+        setSaving(false);
+        return;
+      }
+    }
     setSaving(true);
     try {
       const payload = {
@@ -175,6 +191,14 @@ export function UsersPage({ searchQuery }: UsersPageProps) {
     } finally {
       setSaving(false);
     }
+  }
+
+  function validatePassword(pw: string): string | null {
+    if (!pw || pw.length < 8) return 'Le mot de passe doit contenir au moins 8 caractères.';
+    if (!/[a-z]/.test(pw) || !/[A-Z]/.test(pw)) return 'Le mot de passe doit contenir des lettres minuscules et majuscules.';
+    if (!/[0-9]/.test(pw)) return 'Le mot de passe doit contenir au moins un chiffre.';
+    if (!/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(pw)) return 'Le mot de passe doit contenir au moins un caractère spécial.';
+    return null;
   }
 
   async function toggleActive(p: Profile) {
