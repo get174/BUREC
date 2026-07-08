@@ -61,6 +61,8 @@ export function UsersPage({ searchQuery }: UsersPageProps) {
     role: 'focal' as UserRole,
     phone: '',
     structure_id: '',
+    email: '',
+    password: '',
     is_active: true,
   });
 
@@ -98,7 +100,7 @@ export function UsersPage({ searchQuery }: UsersPageProps) {
 
   function openCreate() {
     setEditing(null);
-    setForm({ full_name: '', role: 'focal', phone: '', structure_id: '', is_active: true });
+    setForm({ full_name: '', role: 'focal', phone: '', structure_id: '', email: '', password: '', is_active: true });
     setModalOpen(true);
   }
 
@@ -109,6 +111,8 @@ export function UsersPage({ searchQuery }: UsersPageProps) {
       role: p.role,
       phone: p.phone ?? '',
       structure_id: p.structure_id ?? '',
+      email: '',
+      password: '',
       is_active: p.is_active,
     });
     setModalOpen(true);
@@ -133,6 +137,35 @@ export function UsersPage({ searchQuery }: UsersPageProps) {
         await updateProfile(editing.id, payload);
         await logActivity('UPDATE_USER', 'profile', { id: editing.id, role: form.role });
         toast('Utilisateur mis à jour', 'success');
+      }
+      else {
+        const { supabase } = await import('../lib/supabase');
+        const { data, error: suError } = await supabase.auth.signUp({ email: form.email, password: form.password } as any);
+        if (suError) {
+          toast('Erreur lors de la création auth: ' + suError.message, 'error');
+        } else {
+          const userId = data.user?.id;
+          if (!userId) {
+            toast('Compte auth créé mais id introuvable. Vérifiez la configuration Supabase.', 'warning');
+          } else {
+            const { error: insertErr } = await supabase.from('profiles').insert([
+              {
+                id: userId,
+                full_name: form.full_name,
+                role: form.role,
+                phone: form.phone || null,
+                structure_id: form.structure_id || null,
+                is_active: form.is_active,
+              },
+            ]);
+            if (insertErr) {
+              toast('Profil créé échoué: ' + insertErr.message, 'error');
+            } else {
+              await logActivity('CREATE_USER', 'profile', { id: userId, role: form.role });
+              toast('Utilisateur créé et profil associé', 'success');
+            }
+          }
+        }
       }
       setModalOpen(false);
       load();
@@ -367,6 +400,32 @@ export function UsersPage({ searchQuery }: UsersPageProps) {
               className="input-field"
             />
           </FormField>
+
+          {!editing && (
+            <>
+              <FormField label="Adresse email" required>
+                <input
+                  type="email"
+                  value={form.email}
+                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  className="input-field"
+                  placeholder="utilisateur@sgmep.cd"
+                  required
+                />
+              </FormField>
+
+              <FormField label="Mot de passe" required>
+                <input
+                  type="password"
+                  value={form.password}
+                  onChange={(e) => setForm({ ...form, password: e.target.value })}
+                  className="input-field"
+                  placeholder="Mot de passe temporaire"
+                  required
+                />
+              </FormField>
+            </>
+          )}
 
           <FormField label="Structure rattachée" hint="Obligatoire pour les Points Focaux">
             <Select

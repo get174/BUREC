@@ -1,0 +1,3 @@
+- [x] Mettre à jour `src/context/AuthContext.tsx` pour ajouter `forgotPassword(email)`
+- [x] Mettre à jour `src/pages/LoginPage.tsx` pour connecter le bouton "Mot de passe oublié ?"
+- [x] Mettre à jour `TODO.md` en marquant les étapes terminées

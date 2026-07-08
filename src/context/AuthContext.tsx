@@ -8,7 +8,9 @@ interface AuthContextValue {
   user: User | null;
   profile: Profile | null;
   loading: boolean;
+  signUp: (payload: { email: string; password: string; full_name: string; role: UserRole; phone?: string | null; structure_id?: string | null; }) => Promise<{ error: string | null }>;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
+  forgotPassword: (email: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
@@ -71,6 +73,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error: error?.message ?? null };
   }
 
+  async function signUp({ email, password, full_name, role, phone = null, structure_id = null }: { email: string; password: string; full_name: string; role: UserRole; phone?: string | null; structure_id?: string | null; }) {
+    // create auth user
+    const { data, error } = await supabase.auth.signUp({ email, password });
+    if (error) return { error: error.message };
+
+    const userId = data.user?.id;
+    if (!userId) return { error: 'Impossible de créer l\'utilisateur' };
+
+    // create profile row
+    const { error: insertError } = await supabase.from('profiles').insert([
+      {
+        id: userId,
+        full_name,
+        role,
+        phone,
+        structure_id,
+        is_active: true,
+      },
+    ]);
+
+    return { error: insertError?.message ?? null };
+  }
+
+  async function forgotPassword(email: string) {
+    const redirectTo = `${window.location.origin}/login`;
+    const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
+    return { error: error?.message ?? null };
+  }
+
   async function signOut() {
     await supabase.auth.signOut();
     setProfile(null);
@@ -88,7 +119,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     user: session?.user ?? null,
     profile,
     loading,
+    signUp,
     signIn,
+    forgotPassword,
     signOut,
     refreshProfile,
   };

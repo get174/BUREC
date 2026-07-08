@@ -123,6 +123,12 @@ export async function fetchProfiles(): Promise<Profile[]> {
   return (data as Profile[]) ?? [];
 }
 
+export async function createProfile(input: Omit<Profile, 'id' | 'created_at' | 'updated_at'>): Promise<Profile> {
+  const { data, error } = await supabase.from('profiles').insert(input).select().single();
+  if (error) throw error;
+  return data as Profile;
+}
+
 export async function updateProfile(id: string, input: Partial<Profile>): Promise<void> {
   const { error } = await supabase.from('profiles').update(input).eq('id', id);
   if (error) throw error;

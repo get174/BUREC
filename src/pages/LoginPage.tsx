@@ -3,12 +3,14 @@ import { Mail, Lock, Eye, EyeOff, AlertCircle, Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export function LoginPage() {
-  const { signIn } = useAuth();
+  const { signIn, forgotPassword } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetMessage, setResetMessage] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,6 +25,28 @@ export function LoginPage() {
           : error
       );
     }
+  };
+
+
+  const handleForgotPassword = async () => {
+    setError(null);
+    setResetMessage(null);
+
+    if (!email.trim()) {
+      setError('Veuillez renseigner votre adresse email pour réinitialiser le mot de passe.');
+      return;
+    }
+
+    setResetLoading(true);
+    const { error } = await forgotPassword(email.trim());
+    setResetLoading(false);
+
+    if (error) {
+      setError(error);
+      return;
+    }
+
+    setResetMessage('Un lien de réinitialisation a été envoyé à votre adresse email.');
   };
 
   return (
@@ -97,6 +121,12 @@ export function LoginPage() {
               </div>
             )}
 
+            {resetMessage && (
+              <div className="p-3.5 bg-success-50 border border-success-200 rounded-lg animate-fade-in">
+                <p className="text-sm text-success-700">{resetMessage}</p>
+              </div>
+            )}
+
             <div>
               <label className="input-label">Adresse email</label>
               <div className="relative">
@@ -141,8 +171,13 @@ export function LoginPage() {
                 <input type="checkbox" className="w-4 h-4 rounded border-neutral-300 text-success-500 focus:ring-success-500/20" />
                 <span className="text-sm text-neutral-600">Se souvenir de moi</span>
               </label>
-              <button type="button" className="text-sm text-primary-900 hover:text-primary-700 font-medium">
-                Mot de passe oublié ?
+              <button
+                type="button"
+                onClick={handleForgotPassword}
+                disabled={resetLoading}
+                className="text-sm text-primary-900 hover:text-primary-700 font-medium disabled:opacity-60"
+              >
+                {resetLoading ? 'Envoi...' : 'Mot de passe oublié ?'}
               </button>
             </div>
 
@@ -167,6 +202,8 @@ export function LoginPage() {
             <p className="text-xs text-primary-700">Email: admin@sgmep.cd</p>
             <p className="text-xs text-primary-700">Mot de passe: AdminSGMEP2026!</p>
           </div>
+
+          
         </div>
       </div>
     </div>
