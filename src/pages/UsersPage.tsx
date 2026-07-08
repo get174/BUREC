@@ -118,6 +118,32 @@ export function UsersPage({ searchQuery }: UsersPageProps) {
     setModalOpen(true);
   }
 
+  function getPasswordStrength(pw: string) {
+    const length = pw.length;
+    const hasLower = /[a-z]/.test(pw);
+    const hasUpper = /[A-Z]/.test(pw);
+    const hasNumber = /[0-9]/.test(pw);
+    const hasSpecial = /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(pw);
+    const score = [length >= 8, hasLower, hasUpper, hasNumber, hasSpecial].filter(Boolean).length;
+
+    if (!pw) {
+      return { label: 'Aucun mot de passe', color: 'neutral', score };
+    }
+    if (score <= 2) return { label: 'Très faible', color: 'error', score };
+    if (score === 3) return { label: 'Faible', color: 'warning', score };
+    if (score === 4) return { label: 'Moyen', color: 'primary', score };
+    return { label: 'Fort', color: 'success', score };
+  }
+
+  const passwordStrength = getPasswordStrength(form.password);
+  const passwordStrengthClass = {
+    neutral: 'text-neutral-500',
+    error: 'text-error-700',
+    warning: 'text-warning-700',
+    primary: 'text-primary-700',
+    success: 'text-success-700',
+  }[passwordStrength.color];
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!form.full_name.trim()) {
@@ -166,12 +192,27 @@ export function UsersPage({ searchQuery }: UsersPageProps) {
             }
           : null;
 
+        await logActivity('CREATE_USER_ATTEMPT', 'profile', {
+          email: form.email,
+          full_name: form.full_name,
+          role: form.role,
+          structure_id: form.structure_id || null,
+        });
+
         const { data, error: suError } = await supabase.auth.signUp({ email: form.email, password: form.password } as any);
         if (suError) {
+          await logActivity('CREATE_USER_FAILED', 'profile', {
+            email: form.email,
+            error: suError.message,
+          });
           toast('Erreur lors de la création auth: ' + suError.message, 'error');
         } else {
           const userId = data.user?.id;
           if (!userId) {
+            await logActivity('CREATE_USER_FAILED', 'profile', {
+              email: form.email,
+              error: 'No user ID returned from Supabase',
+            });
             toast('Compte auth créé mais id introuvable. Vérifiez la configuration Supabase.', 'warning');
           } else {
             const { error: insertErr } = await supabase.from('profiles').insert([
@@ -185,9 +226,19 @@ export function UsersPage({ searchQuery }: UsersPageProps) {
               },
             ]);
             if (insertErr) {
+              await logActivity('CREATE_USER_FAILED', 'profile', {
+                id: userId,
+                email: form.email,
+                error: insertErr.message,
+              });
               toast('Profil créé échoué: ' + insertErr.message, 'error');
             } else {
-              await logActivity('CREATE_USER', 'profile', { id: userId, role: form.role });
+              await logActivity('CREATE_USER', 'profile', {
+                id: userId,
+                email: form.email,
+                role: form.role,
+                structure_id: form.structure_id || null,
+              });
               toast('Utilisateur créé et profil associé', 'success');
             }
           }
@@ -468,6 +519,11 @@ export function UsersPage({ searchQuery }: UsersPageProps) {
                   placeholder="Mot de passe temporaire"
                   required
                 />
+                <div className="mt-2 text-xs text-neutral-500">
+                  <span>Force : </span>
+                  <span className={`font-semibold ${passwordStrengthClass}`}>{passwordStrength.label}</span>
+                  <span className="ml-2">({passwordStrength.score}/5)</span>
+                </div>
               </FormField>
             </>
           )}
