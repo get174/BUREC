@@ -156,6 +156,16 @@ export function UsersPage({ searchQuery }: UsersPageProps) {
       }
       else {
         const { supabase } = await import('../lib/supabase');
+
+        // sauvegarder la session courante (admin) pour la restaurer après signUp
+        const { data: currentSessionData } = await supabase.auth.getSession();
+        const savedSession = currentSessionData.session
+          ? {
+              access_token: currentSessionData.session.access_token,
+              refresh_token: currentSessionData.session.refresh_token,
+            }
+          : null;
+
         const { data, error: suError } = await supabase.auth.signUp({ email: form.email, password: form.password } as any);
         if (suError) {
           toast('Erreur lors de la création auth: ' + suError.message, 'error');
@@ -180,6 +190,17 @@ export function UsersPage({ searchQuery }: UsersPageProps) {
               await logActivity('CREATE_USER', 'profile', { id: userId, role: form.role });
               toast('Utilisateur créé et profil associé', 'success');
             }
+          }
+        }
+
+        // Restaurer la session admin si elle a été remplacée
+        if (savedSession) {
+          try {
+            // setSession remet la session avec les tokens sauvegardés
+            // @ts-ignore
+            await supabase.auth.setSession(savedSession);
+          } catch (err) {
+            console.error('Erreur lors de la restauration de session:', err);
           }
         }
       }
